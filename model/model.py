@@ -129,10 +129,9 @@ class GameOfLifeAutoEncoder():
                     training_loss,
                     test_loss,
                     test_accuracy,
-                )
+                    )
             )
-
-        # Save the model
+    # Save the model
 
 
 
