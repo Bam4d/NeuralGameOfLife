@@ -1,1 +1,1 @@
-# NeuralGameOfLife
+# Neural Game Of Life
