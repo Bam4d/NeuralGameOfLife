@@ -7,13 +7,15 @@ from model import StateUpdateAutoEncoder
 class GameOfLifeAutoEncoder():
 
     def __init__(self, width, height):
+        self._device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self._width = width
         self._height = height
 
-        self._model = StateUpdateAutoEncoder(100, width, height)
-        self._criterion = BCELoss()
+        self._model = StateUpdateAutoEncoder(256, width, height).to(self._device)
+        self._criterion = BCELoss().to(self._device)
 
         self._model.reset_weights()
+
 
     def _generate_observation_sequences(self, training_data):
 
@@ -35,7 +37,7 @@ class GameOfLifeAutoEncoder():
 
         total_samples = observations.shape[0]
 
-        training_idx = np.random.rand(len(total_samples)) < 0.8
+        training_idx = np.random.rand(total_samples) < 0.8
 
         training_observations = observations[training_idx]
         training_next_observations = next_observations[training_idx]
@@ -60,8 +62,8 @@ class GameOfLifeAutoEncoder():
                 # Create the batch
                 batch_end = min(batch_start + batch_size, training_samples)
 
-                training_observations_batch = torch.FloatTensor(training_observations[batch_start:batch_end])
-                training_next_observations_batch = torch.FloatTensor(training_next_observations[batch_start:batch_end])
+                training_observations_batch = torch.FloatTensor(training_observations[batch_start:batch_end]).to(self._device)
+                training_next_observations_batch = torch.FloatTensor(training_next_observations[batch_start:batch_end]).to(self._device)
 
                 predicted_next_observations_batch = self._model.forward(training_observations_batch)
 
@@ -89,8 +91,8 @@ class GameOfLifeAutoEncoder():
                 # Create the batch
                 batch_end = min(batch_start + batch_size, test_samples)
 
-                test_observations_batch = torch.FloatTensor(test_observations[batch_start:batch_end])
-                test_next_observations_batch = torch.FloatTensor(test_next_observations[batch_start:batch_end])
+                test_observations_batch = torch.FloatTensor(test_observations[batch_start:batch_end]).to(self._device)
+                test_next_observations_batch = torch.FloatTensor(test_next_observations[batch_start:batch_end]).to(self._device)
 
                 predicted_next_observations_batch = self._model.forward(test_observations_batch)
 
@@ -131,16 +133,17 @@ class GameOfLifeAutoEncoder():
                     test_accuracy,
                     )
             )
-    # Save the model
 
+    def save_trained_model(self, trained_model_file):
+        torch.save(self._model.state_dict(), trained_model_file)
 
-
-
-    def load_trained(self, trained_model_file):
+    def load_trained_model(self, trained_model_file):
         trained_model_state_dict = torch.load(trained_model_file, map_location='cpu')
         self._model.load_state_dict(trained_model_state_dict)
 
     def predict(self, observation):
-        torch_observation = torch.FloatTensor(np.expand_dims(observation, 0))
+        torch_observation = torch.FloatTensor(observation)
         torch_prediction = self._model.forward(torch_observation)
-        return torch_prediction.detach().numpy()
+
+        # Want to round the values so we just have 1 and 0 as outputs
+        return np.round(torch_prediction.detach().numpy())

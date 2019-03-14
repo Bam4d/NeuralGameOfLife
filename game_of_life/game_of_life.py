@@ -1,5 +1,4 @@
 import numpy as np
-import pygame as pg
 
 class GameOfLife:
 
@@ -37,12 +36,11 @@ class Render(object):
         self._grid_x = grid_x
         self._grid_y = grid_y
 
-    def init(self):
+    def init(self, pg):
+
+        self._pg = pg
         self._window = pg.display.set_mode((self._width, self._height))
         self._window.fill((100, 100, 100))
-
-    def save_image(self, filename):
-        pg.image.save(self._window, filename)
 
     def _get_object_color(self, grid_object):
         if grid_object == 0:
@@ -63,7 +61,7 @@ class SingleRender(Render):
             for c in range(0, self._grid_x):
                 color = self._get_object_color(observation[0][c][r])
 
-                pg.draw.rect(
+                self._pg.draw.rect(
                     self._window,
                     color,
                     [
@@ -75,6 +73,11 @@ class SingleRender(Render):
                 )
                 
 class CompareRender(Render):
+
+    def init(self, pg):
+        self._pg = pg
+        self._window = pg.display.set_mode((self._width * 2 + 10, self._height))
+        self._window.fill((100, 100, 100))
 
     def draw_side_by_side(self, observation_left, observation_right):
 
@@ -88,7 +91,7 @@ class CompareRender(Render):
             for c in range(0, self._grid_x):
                 color = self._get_object_color(observation_left[0][c][r])
 
-                pg.draw.rect(
+                self._pg.draw.rect(
                     self._window,
                     color,
                     [
@@ -106,7 +109,7 @@ class CompareRender(Render):
             for c in range(0, self._grid_x):
                 color = self._get_object_color(observation_right[0][c][r])
 
-                pg.draw.rect(
+                self._pg.draw.rect(
                     self._window,
                     color,
                     [
